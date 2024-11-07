@@ -126,7 +126,21 @@ export default class View {
     const removeBtn = document.createElement('button');
     removeBtn.classList.add('btn', 'btn-danger', 'mb-1', 'ml-1');
     removeBtn.innerHTML = '<i class="fa fa-trash"></i>';
-    removeBtn.onclick = () => this.removeTodo(todo.id);
+    removeBtn.onclick = () => this.confirmDelete(todo);//Nueva linea para advertir el elimado
     row.children[4].appendChild(removeBtn);
+  }
+
+  //-----Funcion para advertir el elimando-----
+  confirmDelete(todo) {
+    const confirmModal = document.getElementById('confirmModal');
+    confirmModal.querySelector('.modal-title').innerText = 'Borrar todo';
+    confirmModal.querySelector('.modal-body').innerText = `El ToDo "${todo.title}" sera eliminado. ¿Desea continuar?`;
+
+    confirmModal.querySelector('#confirm-delete-btn').onclick = () => {
+        this.removeTodo(todo.id);
+        $('#confirmModal').modal('hide');
+    };
+
+    $('#confirmModal').modal('show');
   }
 }
