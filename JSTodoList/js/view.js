@@ -26,23 +26,34 @@ export default class View {
   }
 
   filter(filters) {
-    const { type, words } = filters;
+    const { type, words, dueDate } = filters; // Asegúrate de que dueDate sea parte de los filtros, si es necesario.
     const [, ...rows] = this.table.getElementsByTagName('tr');
     for (const row of rows) {
-      const [title, description, completed] = row.children;
+      const [title, description, dateCell, completed] = row.children; // Incluye la celda de fecha.
       let shouldHide = false;
-
+  
+      // Filtrado por palabras clave
       if (words) {
         shouldHide = !title.innerText.includes(words) && !description.innerText.includes(words);
       }
-
+  
+      // Filtrado por estado de completado
       const shouldBeCompleted = type === 'completed';
       const isCompleted = completed.children[0].checked;
-
+  
       if (type !== 'all' && shouldBeCompleted !== isCompleted) {
         shouldHide = true;
       }
-
+  
+      // Filtrado por fecha (nueva lógica)
+      if (dueDate) {
+        const rowDate = new Date(dateCell.innerText);
+        const filterDate = new Date(dueDate);
+        if (isNaN(rowDate.getTime()) || rowDate.getTime() !== filterDate.getTime()) {
+          shouldHide = true;
+        }
+      }
+  
       if (shouldHide) {
         row.classList.add('d-none');
       } else {
@@ -50,7 +61,7 @@ export default class View {
       }
     }
   }
-
+  
   addTodo(title, description, dueDate) {
     const todo = this.model.addTodo(title, description, dueDate);
     this.createRow(todo);
