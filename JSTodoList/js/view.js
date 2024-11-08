@@ -116,8 +116,6 @@ export default class View {
     checkbox.onclick = () => {
       this.toggleCompleted(todo.id);
       this.updateRowColor(row, todo, today, dueDate); // Actualiza el color cuando se marca como completado
-
-      // Refresca la página
       location.reload();
     };
     row.children[3].appendChild(checkbox);
