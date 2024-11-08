@@ -8,7 +8,7 @@ export default class Model {
           id: 0,
           title: 'Learn JS',
           description: 'Watch JS Tutorials',
-          dueDate: '', // Agrega la propiedad dueDate
+          dueDate: '1900-01-01', // Agrega la propiedad dueDate
           completed: false,
         }
       ];

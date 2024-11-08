@@ -9,8 +9,10 @@ export default class View {
     this.addTodoForm = new AddTodo();
     this.modal = new Modal();
     this.filters = new Filters();
-    
-    // Modificación para capturar el título, descripción y fecha de vencimiento
+
+    // Variable para almacenar la tarea eliminada temporalmente
+    this.deletedTodo = null;
+
     this.addTodoForm.onClick((title, description, dueDate) => this.addTodo(title, description, dueDate));
     this.modal.onClick((id, values) => this.editTodo(id, values));
     this.filters.onClick((filters) => this.filter(filters));
@@ -61,7 +63,7 @@ export default class View {
       }
     }
   }
-  
+ 
   addTodo(title, description, dueDate) {
     const todo = this.model.addTodo(title, description, dueDate);
     this.createRow(todo);
@@ -76,40 +78,44 @@ export default class View {
     const row = document.getElementById(id);
     row.children[0].innerText = values.title;
     row.children[1].innerText = values.description;
-    row.children[2].innerText = values.dueDate; // Actualiza la columna de fecha de vencimiento
+    row.children[2].innerText = values.dueDate;
     row.children[3].children[0].checked = values.completed;
   }
 
   removeTodo(id) {
+    const index = this.model.findTodo(id);
+    this.deletedTodo = { ...this.model.todos[index] }; // Guarda la tarea eliminada temporalmente
     this.model.removeTodo(id);
     document.getElementById(id).remove();
+
+    // Muestra la notificación de "deshacer"
+    this.showUndoNotification();
   }
 
   createRow(todo) {
-    
     const row = this.table.insertRow();
     row.setAttribute('id', todo.id);
 
-    // Logic for setting row color based on task status
     const today = new Date();
     const dueDate = new Date(todo.dueDate);
 
+    // Establece el color de la fila según el estado de la tarea
     if (todo.completed) {
-        if (dueDate >= new Date(todo.completedDate)) {
-            row.style.backgroundColor = 'green'; // Completed on or before the due date
-        } else {
-            row.style.backgroundColor = 'red'; // Completed after the due date
-        }
+      if (dueDate >= new Date(todo.completedDate)) {
+        row.style.backgroundColor = 'green';
+      } else {
+        row.style.backgroundColor = 'red';
+      }
     } else if (dueDate >= today) {
-        row.style.backgroundColor = 'blue'; // Task is still pending and due date is in the future
+      row.style.backgroundColor = 'blue';
     } else {
-        row.style.backgroundColor = 'gray'; // Task is overdue and not completed
+      row.style.backgroundColor = 'gray';
     }
-    
+
     row.innerHTML = `
       <td>${todo.title}</td>
       <td>${todo.description}</td>
-      <td>${todo.dueDate || 'No due date'}</td> <!-- Muestra la fecha de vencimiento -->
+      <td>${todo.dueDate || 'No due date'}</td>
       <td class="text-center"></td>
       <td class="text-right"></td>
     `;
@@ -129,7 +135,7 @@ export default class View {
       id: todo.id,
       title: row.children[0].innerText,
       description: row.children[1].innerText,
-      dueDate: row.children[2].innerText, // Envía la fecha de vencimiento al modal
+      dueDate: row.children[2].innerText,
       completed: row.children[3].children[0].checked,
     });
     row.children[4].appendChild(editBtn);
@@ -137,21 +143,44 @@ export default class View {
     const removeBtn = document.createElement('button');
     removeBtn.classList.add('btn', 'btn-danger', 'mb-1', 'ml-1');
     removeBtn.innerHTML = '<i class="fa fa-trash"></i>';
-    removeBtn.onclick = () => this.confirmDelete(todo);//Nueva linea para advertir el elimado
+    removeBtn.onclick = () => this.confirmDelete(todo);
     row.children[4].appendChild(removeBtn);
   }
 
-  //-----Funcion para advertir el elimando-----
   confirmDelete(todo) {
     const confirmModal = document.getElementById('confirmModal');
     confirmModal.querySelector('.modal-title').innerText = 'Borrar todo';
-    confirmModal.querySelector('.modal-body').innerText = `El ToDo "${todo.title}" sera eliminado. ¿Desea continuar?`;
+    confirmModal.querySelector('.modal-body').innerText = `El ToDo "${todo.title}" será eliminado. ¿Desea continuar?`;
 
     confirmModal.querySelector('#confirm-delete-btn').onclick = () => {
-        this.removeTodo(todo.id);
-        $('#confirmModal').modal('hide');
+      this.removeTodo(todo.id);
+      $('#confirmModal').modal('hide');
     };
 
     $('#confirmModal').modal('show');
+  }
+
+  // Muestra la notificación de deshacer
+  showUndoNotification() {
+    const undoBtn = document.getElementById('undo-btn'); // Botón para deshacer
+    undoBtn.classList.remove('d-none');
+    undoBtn.onclick = () => this.undoDelete();
+  }
+
+  // Función para deshacer la eliminación
+  undoDelete() {
+    if (this.deletedTodo) {
+      this.model.addTodo(
+        this.deletedTodo.title,
+        this.deletedTodo.description,
+        this.deletedTodo.dueDate
+      );
+      this.createRow(this.deletedTodo);
+      this.deletedTodo = null;
+    }
+
+    // Oculta el botón de deshacer
+    const undoBtn = document.getElementById('undo-btn');
+    undoBtn.classList.add('d-none');
   }
 }
